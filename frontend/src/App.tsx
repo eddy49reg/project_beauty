@@ -2,6 +2,7 @@ import styled from '@emotion/styled';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter, Link, Route, Routes } from 'react-router-dom';
 import { LoginPage } from './pages/LoginPage';
+import { RegisterPage } from './pages/RegisterPage';
 import { useAuthStore } from './store/authStore';
 
 const queryClient = new QueryClient();
@@ -76,6 +77,8 @@ function HomePage() {
       ) : (
         <p>
           <StyledLink to="/login">Войти</StyledLink>
+          {' · '}
+          <StyledLink to="/register">Регистрация</StyledLink>
         </p>
       )}
       {user ? (
@@ -97,11 +100,13 @@ function AppRoutes() {
         <Nav>
           <StyledLink to="/">Главная</StyledLink>
           <StyledLink to="/login">Вход</StyledLink>
+          <StyledLink to="/register">Регистрация</StyledLink>
         </Nav>
       </TopBar>
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
       </Routes>
     </Shell>
   );

@@ -1,14 +1,8 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import type { AuthUser } from '../entities/auth';
 
-export type AuthUser = {
-  id: number;
-  login: string;
-  firstname: string;
-  surname: string;
-  phone: string;
-  tg: string | null;
-};
+export type { AuthUser };
 
 type AuthState = {
   accessToken: string | null;

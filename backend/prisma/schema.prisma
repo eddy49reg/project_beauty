@@ -1,0 +1,112 @@
+/// Prisma schema - "чертеж" базы данных.
+/// Этот файл описывает таблицы и связи между ними.
+///
+/// Важно:
+/// - после изменения схемы запускаем миграцию,
+///   чтобы изменения применились в реальной БД.
+/// - затем запускаем generate, чтобы Prisma обновил типы клиента.
+
+/// generator client:
+/// - говорит Prisma сгенерировать JS/TS-клиент для запросов к БД.
+/// - этим клиентом мы пользуемся в PrismaService.
+generator client {
+  provider = "prisma-client-js"
+}
+
+/// datasource db:
+/// - говорит, какую БД используем (здесь PostgreSQL).
+/// - строка подключения (DATABASE_URL) задается в prisma.config.ts/.env.
+datasource db {
+  provider = "postgresql"
+}
+
+/// Таблица пользователей.
+/// Каждая строка = один пользователь приложения.
+model User {
+  /// @id = первичный ключ (главный уникальный ключ таблицы).
+  /// @default(autoincrement()) = id проставляется автоматически.
+  id         Int                      @id @default(autoincrement())
+  /// @unique = логин не может повторяться у двух пользователей.
+  login      String                   @unique @db.VarChar(50)
+  /// Bcrypt-хеш пароля (никогда не отдаём наружу).
+  passwordHash String?                @map("password_hash") @db.VarChar(255)
+  firstname  String                   @db.VarChar(100)
+  surname    String                   @db.VarChar(100)
+  /// BigInt для числового телефона по вашему решению.
+  phone      BigInt
+  /// ? означает, что поле может быть null (необязательное).
+  tg         String?                  @db.VarChar(100)
+  /// createdAt: ставится при создании записи.
+  createdAt  DateTime                 @default(now()) @map("created_at") @db.Timestamptz(6)
+  /// updatedAt: Prisma обновляет автоматически при update.
+  updatedAt  DateTime                 @updatedAt @map("updated_at") @db.Timestamptz(6)
+  /// Связь "один пользователь -> много membership".
+  membership ChampionshipMembership[]
+
+  /// @@map = реальное имя таблицы в PostgreSQL.
+  @@map("users")
+}
+
+/// Таблица ролей (participant, judge, organizer).
+model Role {
+  id         Int                      @id @default(autoincrement())
+  code       String                   @unique @db.VarChar(50)
+  title      String?                  @db.VarChar(100)
+  createdAt  DateTime                 @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt  DateTime                 @updatedAt @map("updated_at") @db.Timestamptz(6)
+  membership ChampionshipMembership[]
+
+  @@map("roles")
+}
+
+/// Таблица чемпионатов.
+model Championship {
+  id         Int                      @id @default(autoincrement())
+  title      String                   @db.VarChar(200)
+  createdAt  DateTime                 @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt  DateTime                 @updatedAt @map("updated_at") @db.Timestamptz(6)
+  membership ChampionshipMembership[]
+
+  @@map("championships")
+}
+
+/// Таблица номинаций.
+model Nomination {
+  id          Int                      @id @default(autoincrement())
+  title       String                   @db.VarChar(200)
+  description String?
+  createdAt   DateTime                 @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime                 @updatedAt @map("updated_at") @db.Timestamptz(6)
+  membership  ChampionshipMembership[]
+
+  @@map("nominations")
+}
+
+/// Таблица-связка (membership):
+/// одна строка говорит, что конкретный пользователь
+/// в конкретном чемпионате и номинации имеет конкретную роль.
+model ChampionshipMembership {
+  id             Int          @id @default(autoincrement())
+  /// Ниже "сырой" вид внешних ключей (FK): user_id, championship_id, ...
+  userId         Int          @map("user_id")
+  championshipId Int          @map("championship_id")
+  roleId         Int          @map("role_id")
+  nominationId   Int          @map("nomination_id")
+  createdAt      DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime     @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  /// @relation связывает FK-поля выше с таблицами-родителями.
+  /// onDelete:
+  /// - Cascade => удаляем родителя, удаляются и зависимые membership.
+  /// - Restrict => не даст удалить роль, если она используется.
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  championship Championship @relation(fields: [championshipId], references: [id], onDelete: Cascade)
+  role         Role         @relation(fields: [roleId], references: [id], onDelete: Restrict)
+  nomination   Nomination   @relation(fields: [nominationId], references: [id], onDelete: Cascade)
+
+  /// Запрещаем дубль одной и той же комбинации:
+  /// user + championship + nomination + role.
+  @@unique([userId, championshipId, nominationId, roleId], map: "membership_user_champ_nom_role_uq")
+  @@map("championship_memberships")
+}
+

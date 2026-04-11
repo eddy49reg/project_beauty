@@ -1,19 +1,22 @@
-import { Type } from 'class-transformer';
+import { Transform } from 'class-transformer';
 import {
   IsNotEmpty,
-  IsNumber,
   IsOptional,
   IsString,
-  Max,
+  Matches,
   MaxLength,
-  Min,
   MinLength,
 } from 'class-validator';
+import { LOGIN_RE, NAME_RE, TG_USERNAME_RE } from '../lib/auth-patterns';
+import { parseToE164 } from '../lib/phone-e164';
 
 export class RegisterDto {
+  @Transform(({ value }) => String(value ?? '').trim())
   @IsString()
   @IsNotEmpty()
-  @MaxLength(50)
+  @Matches(LOGIN_RE, {
+    message: 'Логин: 3–50 символов, латиница, цифры, знаки _ и -',
+  })
   login!: string;
 
   @IsString()
@@ -22,24 +25,41 @@ export class RegisterDto {
   @MaxLength(128)
   password!: string;
 
+  @Transform(({ value }) => String(value ?? '').trim())
   @IsString()
   @IsNotEmpty()
   @MaxLength(100)
+  @Matches(NAME_RE, {
+    message: 'Имя: буквы (в т.ч. кириллица), пробел, дефис, апостроф',
+  })
   firstname!: string;
 
+  @Transform(({ value }) => String(value ?? '').trim())
   @IsString()
   @IsNotEmpty()
   @MaxLength(100)
+  @Matches(NAME_RE, {
+    message: 'Фамилия: буквы (в т.ч. кириллица), пробел, дефис, апостроф',
+  })
   surname!: string;
 
-  @Type(() => Number)
-  @IsNumber()
-  @Min(1_000_000_000)
-  @Max(Number.MAX_SAFE_INTEGER)
-  phone!: number;
+  @Transform(({ value }) => parseToE164(String(value ?? '')) ?? '')
+  @IsString()
+  @IsNotEmpty({
+    message:
+      'Телефон: укажите корректный номер (РФ без кода страны или международный, например +44…)',
+  })
+  phone!: string;
 
+  @Transform(({ value }) => {
+    if (value == null || String(value).trim() === '') return undefined;
+    return String(value).trim().toLowerCase();
+  })
   @IsOptional()
   @IsString()
-  @MaxLength(100)
+  @Matches(TG_USERNAME_RE, {
+    message:
+      'Telegram: укажите @username латиницей (5–32 символа после @, только a-z, цифры, _)',
+  })
   tg?: string;
 }

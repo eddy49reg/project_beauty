@@ -5,6 +5,15 @@ import {
   type RegisterBody,
   useRegisterMutation,
 } from '../../entities/auth';
+import {
+  LOGIN_RE,
+  LOGIN_RE_MESSAGE,
+  NAME_RE,
+  NAME_RE_MESSAGE,
+  TG_USERNAME_MESSAGE,
+  TG_USERNAME_RE,
+} from '../../lib/authValidation';
+import { parseToE164 } from '../../lib/phoneE164';
 import { useAuthStore } from '../../store/authStore';
 import {
   Button,
@@ -20,14 +29,7 @@ import {
   Title,
 } from './styles';
 
-type RegisterFormValues = Omit<RegisterBody, 'phone'> & {
-  phone: string;
-  confirmPassword: string;
-};
-
-function digitsToPhoneNumber(value: string): number {
-  return Number(value.replace(/\D/g, ''));
-}
+type RegisterFormValues = RegisterBody & { confirmPassword: string };
 
 export function RegisterPage() {
   const navigate = useNavigate();
@@ -74,14 +76,15 @@ export function RegisterPage() {
         ) : null}
         <form
           onSubmit={handleSubmit((data) => {
-            const phone = digitsToPhoneNumber(data.phone);
+            const phone = parseToE164(data.phone)!;
+            const tgRaw = data.tg?.trim();
             const body: RegisterBody = {
-              login: data.login,
+              login: data.login.trim(),
               password: data.password,
-              firstname: data.firstname,
-              surname: data.surname,
+              firstname: data.firstname.trim(),
+              surname: data.surname.trim(),
               phone,
-              tg: data.tg?.trim() || undefined,
+              tg: tgRaw ? tgRaw.toLowerCase() : undefined,
             };
             mutation.reset();
             mutation.mutate(body);
@@ -96,10 +99,7 @@ export function RegisterPage() {
               aria-invalid={errors.login ? true : undefined}
               {...register('login', {
                 required: 'Введите логин',
-                maxLength: {
-                  value: 50,
-                  message: 'Не больше 50 символов',
-                },
+                validate: (v) => LOGIN_RE.test(v.trim()) || LOGIN_RE_MESSAGE,
               })}
             />
             {errors.login?.message ? (
@@ -114,10 +114,7 @@ export function RegisterPage() {
               aria-invalid={errors.firstname ? true : undefined}
               {...register('firstname', {
                 required: 'Введите имя',
-                maxLength: {
-                  value: 100,
-                  message: 'Не больше 100 символов',
-                },
+                validate: (v) => NAME_RE.test(v.trim()) || NAME_RE_MESSAGE,
               })}
             />
             {errors.firstname?.message ? (
@@ -132,10 +129,7 @@ export function RegisterPage() {
               aria-invalid={errors.surname ? true : undefined}
               {...register('surname', {
                 required: 'Введите фамилию',
-                maxLength: {
-                  value: 100,
-                  message: 'Не больше 100 символов',
-                },
+                validate: (v) => NAME_RE.test(v.trim()) || NAME_RE_MESSAGE,
               })}
             />
             {errors.surname?.message ? (
@@ -148,17 +142,13 @@ export function RegisterPage() {
               id="reg-phone"
               type="tel"
               autoComplete="tel"
-              placeholder="Например, 79991234567"
+              placeholder="Например, 89991234567 или +44 20 7946 0958"
               aria-invalid={errors.phone ? true : undefined}
               {...register('phone', {
                 required: 'Введите телефон',
-                validate: (v) => {
-                  const n = digitsToPhoneNumber(v);
-                  if (!Number.isSafeInteger(n) || n < 1_000_000_000) {
-                    return 'Укажите корректный номер (цифры, от 10 знаков)';
-                  }
-                  return true;
-                },
+                validate: (v) =>
+                  parseToE164(v) != null ||
+                  'Некорректный номер: РФ без кода страны или международный (+…)',
               })}
             />
             {errors.phone?.message ? (
@@ -173,9 +163,11 @@ export function RegisterPage() {
               placeholder="@username"
               aria-invalid={errors.tg ? true : undefined}
               {...register('tg', {
-                maxLength: {
-                  value: 100,
-                  message: 'Не больше 100 символов',
+                validate: (v) => {
+                  const t = v?.trim();
+                  if (!t) return true;
+                  const lower = t.toLowerCase();
+                  return TG_USERNAME_RE.test(lower) || TG_USERNAME_MESSAGE;
                 },
               })}
             />

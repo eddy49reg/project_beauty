@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '@prisma/client';
-import * as bcrypt from 'bcrypt';
+import bcrypt from 'bcrypt';
 import { Pool } from 'pg';
 
 /**
@@ -50,14 +50,14 @@ async function main(): Promise<void> {
    * Логин: admin / пароль: admin123
    */
   const adminPasswordPlain = 'admin123';
-  const passwordHash = await bcrypt.hash(adminPasswordPlain, 10);
+  const passwordHash = await bcrypt.hash(adminPasswordPlain, 12);
 
   const adminUser = await prisma.user.upsert({
     where: { login: 'admin' },
     update: {
       firstname: 'System',
       surname: 'Admin',
-      phone: BigInt(79990000000),
+      phone: '+79990000000',
       tg: '@admin',
       passwordHash,
     },
@@ -65,7 +65,7 @@ async function main(): Promise<void> {
       login: 'admin',
       firstname: 'System',
       surname: 'Admin',
-      phone: BigInt(79990000000),
+      phone: '+79990000000',
       tg: '@admin',
       passwordHash,
     },

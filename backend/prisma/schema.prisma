@@ -32,8 +32,8 @@ model User {
   passwordHash String?                @map("password_hash") @db.VarChar(255)
   firstname  String                   @db.VarChar(100)
   surname    String                   @db.VarChar(100)
-  /// BigInt для числового телефона по вашему решению.
-  phone      BigInt
+  /// Телефон в E.164 (например +79991234567), задаётся через libphonenumber-js.
+  phone      String                   @db.VarChar(32)
   /// ? означает, что поле может быть null (необязательное).
   tg         String?                  @db.VarChar(100)
   /// createdAt: ставится при создании записи.

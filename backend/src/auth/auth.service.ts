@@ -1,11 +1,12 @@
 import {
   ConflictException,
   Injectable,
+  InternalServerErrorException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Prisma } from '@prisma/client';
-import * as bcrypt from 'bcrypt';
+import bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
@@ -24,9 +25,17 @@ type UserRow = {
   login: string;
   firstname: string;
   surname: string;
-  phone: bigint;
+  phone: string;
   tg: string | null;
 };
+
+const BCRYPT_ROUNDS = 12;
+
+function assertBcryptHash(value: string): void {
+  if (!value.startsWith('$2')) {
+    throw new Error('bcrypt: expected hash to start with $2a/$2b/$2y');
+  }
+}
 
 @Injectable()
 export class AuthService {
@@ -57,7 +66,12 @@ export class AuthService {
   async register(
     dto: RegisterDto,
   ): Promise<{ accessToken: string; user: AuthUserPayload }> {
-    const passwordHash = await bcrypt.hash(dto.password, 10);
+    const passwordHash = await bcrypt.hash(dto.password, BCRYPT_ROUNDS);
+    try {
+      assertBcryptHash(passwordHash);
+    } catch {
+      throw new InternalServerErrorException('Не удалось подготовить пароль');
+    }
 
     try {
       const user = await this.prisma.user.create({
@@ -66,7 +80,7 @@ export class AuthService {
           passwordHash,
           firstname: dto.firstname,
           surname: dto.surname,
-          phone: BigInt(dto.phone),
+          phone: dto.phone,
           tg: dto.tg ?? null,
         },
       });
@@ -97,7 +111,7 @@ export class AuthService {
         login: user.login,
         firstname: user.firstname,
         surname: user.surname,
-        phone: user.phone.toString(),
+        phone: user.phone,
         tg: user.tg,
       },
     };

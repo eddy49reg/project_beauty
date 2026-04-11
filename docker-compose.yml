@@ -7,8 +7,8 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: beauty_championship
     ports:
-      # 5433 на хосте, чтобы не пересекаться с локальным Postgres на :5432
-      - '5433:5432'
+      # внешний порт не 5432 (часто занят локальным Postgres); при конфликте смените левое число
+      - '5434:5432'
     volumes:
       - beauty_pg_data:/var/lib/postgresql/data
     healthcheck:

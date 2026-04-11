@@ -23,7 +23,7 @@ export type RegisterBody = {
   password: string;
   firstname: string;
   surname: string;
-  phone: number;
+  phone: string;
   tg?: string;
 };
 

@@ -1,4 +1,4 @@
-# Сборка Nest + Prisma Client
+# Сборка Nest + Prisma Client (единственный сетевой npm ci)
 FROM node:22-bookworm-slim AS builder
 
 WORKDIR /app
@@ -15,7 +15,7 @@ COPY src ./src
 RUN npx prisma generate
 RUN npm run build
 
-# Продакшен-образ: только runtime-зависимости + Prisma CLI для migrate deploy
+# Продакшен: без повторного npm ci (устойчиво к обрывам сети в CI/Docker)
 FROM node:22-bookworm-slim AS production
 
 WORKDIR /app
@@ -26,16 +26,14 @@ RUN apt-get update -y \
   && rm -rf /var/lib/apt/lists/*
 
 COPY package.json package-lock.json ./
-RUN npm ci --omit=dev \
-  && npm install prisma@7.5.0 --no-save
-
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/dist ./dist
 COPY prisma ./prisma
 COPY prisma.config.ts ./
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
+
+# Убираем dev-зависимости из уже скачанного дерева (без обращения к registry)
+RUN npm prune --omit=dev
 
 EXPOSE 3000
 
-# Сначала применяем миграции к БД в Docker-сети, затем стартуем API
-CMD ["sh", "-c", "npx prisma migrate deploy && node dist/main.js"]
+CMD ["sh", "-c", "npx prisma migrate deploy && node dist/src/main.js"]

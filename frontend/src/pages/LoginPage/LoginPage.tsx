@@ -5,6 +5,7 @@ import {
   type LoginBody,
   useLoginMutation,
 } from '../../entities/auth';
+import { LOGIN_RE, LOGIN_RE_MESSAGE } from '../../lib/authValidation';
 import { useAuthStore } from '../../store/authStore';
 import {
   Button,
@@ -57,7 +58,10 @@ export function LoginPage() {
         <form
           onSubmit={handleSubmit((data) => {
             mutation.reset();
-            mutation.mutate(data);
+            mutation.mutate({
+              login: data.login.trim(),
+              password: data.password,
+            });
           })}
           noValidate
         >
@@ -69,10 +73,7 @@ export function LoginPage() {
               aria-invalid={errors.login ? true : undefined}
               {...register('login', {
                 required: 'Введите логин',
-                maxLength: {
-                  value: 50,
-                  message: 'Не больше 50 символов',
-                },
+                validate: (v) => LOGIN_RE.test(v.trim()) || LOGIN_RE_MESSAGE,
               })}
             />
             {errors.login?.message ? (

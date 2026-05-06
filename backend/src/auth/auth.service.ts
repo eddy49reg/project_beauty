@@ -7,6 +7,7 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { Prisma } from '@prisma/client';
 import bcrypt from 'bcrypt';
+import type { AppUserRole } from '../common/app-user-role';
 import { PrismaService } from '../prisma/prisma.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
@@ -18,6 +19,7 @@ export type AuthUserPayload = {
   surname: string;
   phone: string;
   tg: string | null;
+  appRole: AppUserRole;
 };
 
 type UserRow = {
@@ -27,6 +29,7 @@ type UserRow = {
   surname: string;
   phone: string;
   tg: string | null;
+  appRole: AppUserRole;
 };
 
 const BCRYPT_ROUNDS = 12;
@@ -102,6 +105,7 @@ export class AuthService {
     const accessToken = await this.jwtService.signAsync({
       sub: user.id,
       login: user.login,
+      appRole: user.appRole,
     });
 
     return {
@@ -113,6 +117,7 @@ export class AuthService {
         surname: user.surname,
         phone: user.phone,
         tg: user.tg,
+        appRole: user.appRole,
       },
     };
   }

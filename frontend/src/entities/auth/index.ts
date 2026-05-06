@@ -4,6 +4,7 @@ export type {
   LoginResponse,
   RegisterBody,
   RegisterResponse,
+  UserAppRole,
 } from './types';
 export { postLogin, postRegister } from './api';
 export { getAuthApiErrorMessage } from './lib/apiError';

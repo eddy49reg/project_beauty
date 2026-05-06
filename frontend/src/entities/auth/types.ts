@@ -1,3 +1,6 @@
+/** Совпадает с Prisma `UserAppRole`. */
+export type UserAppRole = 'USER' | 'ORGANIZER' | 'ADMIN';
+
 export type AuthUser = {
   id: number;
   login: string;
@@ -5,6 +8,7 @@ export type AuthUser = {
   surname: string;
   phone: string;
   tg: string | null;
+  appRole?: UserAppRole;
 };
 
 export type LoginBody = {

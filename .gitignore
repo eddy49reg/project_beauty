@@ -1,0 +1,32 @@
+# macOS
+.DS_Store
+**/.DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Cursor IDE: правила, локальные настройки агента (не в репозиторий)
+.cursor/
+
+# ВКР: локальные plain-text выжимки из Word для поиска в IDE (не коммитить)
+docs/*-plain.txt
+
+# Локальный venv только для скрипта генерации docx (python-docx)
+.venv-docx/
+
+# ВКР: сгенерированные Word и примеры PDF в docs/
+docs/**/*.docx
+docs/**/*.pdf
+
+# ВКР: текстовые документы плана/спринтов в docs/ (держим только локально)
+docs/ВКР*.md
+
+# Локальные заметки фронтенда (конвенции и т.п.)
+frontend/docs/
+
+# ВКР: Python — блоки текста, стили, генераторы .docx
+scripts/vkr*.py
+scripts/generate*vkr*.py
+scripts/generate-nir-assembly-docx.py

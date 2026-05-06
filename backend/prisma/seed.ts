@@ -4,29 +4,19 @@ import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcrypt';
 import { Pool } from 'pg';
 
-/**
- * Создаем один экземпляр PrismaClient для всего seed-скрипта.
- * Через него выполняем запросы в БД.
- */
 const connectionString = process.env.DATABASE_URL;
 if (!connectionString) {
   throw new Error('DATABASE_URL is not set');
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
 const pool = new Pool({ connectionString });
-// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
+
 const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   adapter,
 });
 
 async function main(): Promise<void> {
-  /**
-   * upsert = "обновить если запись есть, иначе создать".
-   * Это удобно для сидов, потому что скрипт можно запускать много раз.
-   */
   const participantRole = await prisma.role.upsert({
     where: { code: 'participant' },
     update: { title: 'Участник' },
@@ -45,10 +35,6 @@ async function main(): Promise<void> {
     create: { code: 'organizer', title: 'Организатор' },
   });
 
-  /**
-   * Пароль админа только для локальной разработки (смени в проде).
-   * Логин: admin / пароль: admin123
-   */
   const adminPasswordPlain = 'admin123';
   const passwordHash = await bcrypt.hash(adminPasswordPlain, 12);
 
@@ -60,6 +46,7 @@ async function main(): Promise<void> {
       phone: '+79990000000',
       tg: '@admin',
       passwordHash,
+      appRole: 'ADMIN',
     },
     create: {
       login: 'admin',
@@ -68,6 +55,7 @@ async function main(): Promise<void> {
       phone: '+79990000000',
       tg: '@admin',
       passwordHash,
+      appRole: 'ADMIN',
     },
   });
 

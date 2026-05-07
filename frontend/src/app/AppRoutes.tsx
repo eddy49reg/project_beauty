@@ -4,6 +4,8 @@ import { MembershipFormPage } from '../pages/MembershipFormPage/MembershipFormPa
 import { MembershipsListPage } from '../pages/MembershipsListPage/MembershipsListPage';
 import { NominationFormPage } from '../pages/NominationFormPage/NominationFormPage';
 import { NominationsListPage } from '../pages/NominationsListPage/NominationsListPage';
+import { WorkFormPage } from '../pages/WorkFormPage/WorkFormPage';
+import { WorksListPage } from '../pages/WorksListPage/WorksListPage';
 import { AppShell } from '../widgets/AppShell';
 import { AdminUsersGate } from './AdminUsersGate';
 import { ChampionshipsListGate } from './ChampionshipsListGate';
@@ -75,6 +77,30 @@ export function AppRoutes() {
             <OrganizerGate>
               <MembershipFormPage />
             </OrganizerGate>
+          }
+        />
+        <Route
+          path="/championships/:championshipId/works/my"
+          element={
+            <LoggedInGate>
+              <WorksListPage />
+            </LoggedInGate>
+          }
+        />
+        <Route
+          path="/championships/:championshipId/works/new"
+          element={
+            <LoggedInGate>
+              <WorkFormPage />
+            </LoggedInGate>
+          }
+        />
+        <Route
+          path="/championships/:championshipId/works/:workId/edit"
+          element={
+            <LoggedInGate>
+              <WorkFormPage />
+            </LoggedInGate>
           }
         />
         <Route path="/admin/users" element={<AdminUsersGate />} />

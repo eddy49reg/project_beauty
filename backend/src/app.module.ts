@@ -10,6 +10,7 @@ import { NominationsModule } from './nominations/nominations.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { RolesModule } from './roles/roles.module';
 import { UsersModule } from './users/users.module';
+import { WorksModule } from './works/works.module';
 
 /**
  * AppModule - "главный контейнер" Nest приложения.
@@ -35,6 +36,7 @@ import { UsersModule } from './users/users.module';
     RolesModule,
     UsersModule,
     MembershipsModule,
+    WorksModule,
   ],
   controllers: [AppController],
   providers: [AppService],

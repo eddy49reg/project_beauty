@@ -25,6 +25,12 @@ enum ChampionshipStatus {
   ARCHIVED
 }
 
+enum WorkStatus {
+  DRAFT
+  SUBMITTED
+  OVERDUE
+}
+
 model User {
   id         Int                      @id @default(autoincrement())
   login      String                   @unique @db.VarChar(50)
@@ -36,6 +42,7 @@ model User {
   createdAt  DateTime                 @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt  DateTime                 @updatedAt @map("updated_at") @db.Timestamptz(6)
   membership ChampionshipMembership[]
+  works      Work[]
   appRole    UserAppRole              @default(USER) @map("app_role")
 
   @@map("users")
@@ -66,6 +73,7 @@ model Championship {
   updatedAt           DateTime                 @updatedAt @map("updated_at") @db.Timestamptz(6)
   nominations         Nomination[]
   membership          ChampionshipMembership[]
+  works               Work[]
 
   @@map("championships")
 }
@@ -79,6 +87,7 @@ model Nomination {
   updatedAt      DateTime                 @updatedAt @map("updated_at") @db.Timestamptz(6)
   championship   Championship             @relation(fields: [championshipId], references: [id], onDelete: Cascade)
   membership     ChampionshipMembership[]
+  works          Work[]
 
   @@unique([championshipId, title], map: "nominations_championship_title_uq")
   @@map("nominations")
@@ -100,5 +109,25 @@ model ChampionshipMembership {
 
   @@unique([userId, championshipId, nominationId, roleId], map: "membership_user_champ_nom_role_uq")
   @@map("championship_memberships")
+}
+
+model Work {
+  id             Int        @id @default(autoincrement())
+  championshipId Int        @map("championship_id")
+  nominationId   Int        @map("nomination_id")
+  authorId       Int        @map("author_id")
+  title          String     @db.VarChar(200)
+  description    String?
+  status         WorkStatus @default(DRAFT)
+  submittedAt    DateTime?  @map("submitted_at") @db.Timestamptz(6)
+  createdAt      DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime   @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  championship Championship @relation(fields: [championshipId], references: [id], onDelete: Cascade)
+  nomination   Nomination   @relation(fields: [nominationId], references: [id], onDelete: Restrict)
+  author       User         @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@unique([authorId, nominationId], map: "works_author_nomination_uq")
+  @@map("works")
 }
 

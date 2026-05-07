@@ -158,6 +158,10 @@ export function ChampionshipsListPage() {
                       <Link to={`/championships/${row.id}/memberships`}>
                         Назначения
                       </Link>
+                      {' · '}
+                      <Link to={`/championships/${row.id}/works/my`}>
+                        Мои работы
+                      </Link>
                       {canManage && row.status !== 'ARCHIVED' ? (
                         <>
                           {' · '}

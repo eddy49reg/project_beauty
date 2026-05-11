@@ -2,6 +2,8 @@ import { Route, Routes } from 'react-router-dom';
 import { ChampionshipFormPage } from '../pages/ChampionshipFormPage/ChampionshipFormPage';
 import { MembershipFormPage } from '../pages/MembershipFormPage/MembershipFormPage';
 import { MembershipsListPage } from '../pages/MembershipsListPage/MembershipsListPage';
+import { JudgeWorksListPage } from '../pages/JudgeWorksListPage/JudgeWorksListPage';
+import { JudgeWorkScorePage } from '../pages/JudgeWorkScorePage/JudgeWorkScorePage';
 import { NominationFormPage } from '../pages/NominationFormPage/NominationFormPage';
 import { NominationsListPage } from '../pages/NominationsListPage/NominationsListPage';
 import { WorkFormPage } from '../pages/WorkFormPage/WorkFormPage';
@@ -14,6 +16,7 @@ import { OrganizerGate } from './OrganizerGate';
 import { HomePage } from '../pages/HomePage';
 import { LoginPage } from '../pages/LoginPage';
 import { RegisterPage } from '../pages/RegisterPage';
+import { ResultsPage } from '../pages/ResultsPage/ResultsPage';
 
 export function AppRoutes() {
   return (
@@ -80,6 +83,22 @@ export function AppRoutes() {
           }
         />
         <Route
+          path="/championships/:championshipId/judging/works"
+          element={
+            <LoggedInGate>
+              <JudgeWorksListPage />
+            </LoggedInGate>
+          }
+        />
+        <Route
+          path="/championships/:championshipId/judging/works/:workId"
+          element={
+            <LoggedInGate>
+              <JudgeWorkScorePage />
+            </LoggedInGate>
+          }
+        />
+        <Route
           path="/championships/:championshipId/works/my"
           element={
             <LoggedInGate>
@@ -100,6 +119,14 @@ export function AppRoutes() {
           element={
             <LoggedInGate>
               <WorkFormPage />
+            </LoggedInGate>
+          }
+        />
+        <Route
+          path="/championships/:championshipId/results"
+          element={
+            <LoggedInGate>
+              <ResultsPage />
             </LoggedInGate>
           }
         />

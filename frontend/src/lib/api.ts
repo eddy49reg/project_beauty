@@ -2,13 +2,12 @@ import axios from 'axios';
 import { useAuthStore } from '../store/authStore';
 
 function getBaseURL(): string {
-  if (import.meta.env.VITE_API_URL) {
-    return import.meta.env.VITE_API_URL.replace(/\/$/, '');
+  const raw = import.meta.env.VITE_API_URL;
+  if (typeof raw === 'string' && raw.trim() !== '') {
+    return raw.replace(/\/$/, '');
   }
-  if (import.meta.env.DEV) {
-    return '/api';
-  }
-  return '';
+  // dev: Vite proxy /api → backend; docker (nginx): тот же префикс проксируется на backend
+  return '/api';
 }
 
 export const api = axios.create({

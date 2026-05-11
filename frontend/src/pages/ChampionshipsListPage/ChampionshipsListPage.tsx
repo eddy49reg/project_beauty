@@ -162,6 +162,14 @@ export function ChampionshipsListPage() {
                       <Link to={`/championships/${row.id}/works/my`}>
                         Мои работы
                       </Link>
+                      {' · '}
+                      <Link to={`/championships/${row.id}/judging/works`}>
+                        Судейство
+                      </Link>
+                      {' · '}
+                      <Link to={`/championships/${row.id}/results`}>
+                        Результаты
+                      </Link>
                       {canManage && row.status !== 'ARCHIVED' ? (
                         <>
                           {' · '}

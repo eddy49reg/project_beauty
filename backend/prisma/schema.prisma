@@ -43,6 +43,7 @@ model User {
   updatedAt  DateTime                 @updatedAt @map("updated_at") @db.Timestamptz(6)
   membership ChampionshipMembership[]
   works      Work[]
+  judgeScores JudgeScore[]
   appRole    UserAppRole              @default(USER) @map("app_role")
 
   @@map("users")
@@ -126,8 +127,27 @@ model Work {
   championship Championship @relation(fields: [championshipId], references: [id], onDelete: Cascade)
   nomination   Nomination   @relation(fields: [nominationId], references: [id], onDelete: Restrict)
   author       User         @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  judgeScores  JudgeScore[]
 
   @@unique([authorId, nominationId], map: "works_author_nomination_uq")
   @@map("works")
+}
+
+model JudgeScore {
+  id         Int      @id @default(autoincrement())
+  workId     Int      @map("work_id")
+  judgeId    Int      @map("judge_id")
+  score      Int
+  comment    String?
+  isFinal    Boolean  @default(false) @map("is_final")
+  finalizedAt DateTime? @map("finalized_at") @db.Timestamptz(6)
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  work       Work     @relation(fields: [workId], references: [id], onDelete: Cascade)
+  judge      User     @relation(fields: [judgeId], references: [id], onDelete: Cascade)
+
+  @@unique([workId, judgeId], map: "judge_scores_work_judge_uq")
+  @@map("judge_scores")
 }
 

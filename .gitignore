@@ -6,6 +6,7 @@
 __pycache__/
 *.py[cod]
 *$py.class
+.venv/
 
 # Cursor IDE: правила, локальные настройки агента (не в репозиторий)
 .cursor/
@@ -13,7 +14,7 @@ __pycache__/
 # ВКР: локальные plain-text выжимки из Word для поиска в IDE (не коммитить)
 docs/*-plain.txt
 
-# Локальный venv только для скрипта генерации docx (python-docx)
+# Локальные venv для скриптов генерации .docx (python-docx и т.д.)
 .venv-docx/
 
 # ВКР: сгенерированные Word и примеры PDF в docs/

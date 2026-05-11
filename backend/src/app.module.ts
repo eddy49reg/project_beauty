@@ -6,9 +6,11 @@ import { AdminModule } from './admin/admin.module';
 import { AuthModule } from './auth/auth.module';
 import { ChampionshipsModule } from './championships/championships.module';
 import { MembershipsModule } from './memberships/memberships.module';
+import { JudgingModule } from './judging/judging.module';
 import { NominationsModule } from './nominations/nominations.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { RolesModule } from './roles/roles.module';
+import { ResultsModule } from './results/results.module';
 import { UsersModule } from './users/users.module';
 import { WorksModule } from './works/works.module';
 
@@ -32,8 +34,10 @@ import { WorksModule } from './works/works.module';
     AuthModule,
     AdminModule,
     ChampionshipsModule,
+    JudgingModule,
     NominationsModule,
     RolesModule,
+    ResultsModule,
     UsersModule,
     MembershipsModule,
     WorksModule,

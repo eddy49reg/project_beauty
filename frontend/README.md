@@ -1,6 +1,10 @@
-# React + TypeScript + Vite
+# Frontend (React + TypeScript + Vite)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Frontend app for `project_beauty`.
+
+Deployment and demo runbook:
+
+- `../docs/DEPLOYMENT-RUNBOOK.md`
 
 Currently, two official plugins are available:
 

@@ -1,5 +1,5 @@
 import { api } from '../../lib/api';
-import type { CreateWorkBody, UpdateWorkBody, WorkRow } from './types';
+import type { CreateWorkBody, UpdateWorkBody, WorkAttachmentRow, WorkRow } from './types';
 
 export async function getMyWorks(championshipId: number): Promise<WorkRow[]> {
   const { data } = await api.get<WorkRow[]>(
@@ -25,6 +25,28 @@ export async function postWork(
   const { data } = await api.post<WorkRow>(
     `/championships/${championshipId}/works`,
     body,
+  );
+  return data;
+}
+
+/** Создание черновика и загрузка изображений одним запросом (сервер откатывает при ошибке). */
+export async function postWorkWithAttachments(
+  championshipId: number,
+  body: CreateWorkBody,
+  files: File[],
+): Promise<WorkRow> {
+  const form = new FormData();
+  form.append('nominationId', String(body.nominationId));
+  form.append('title', body.title);
+  if (body.description !== undefined && body.description !== '') {
+    form.append('description', body.description);
+  }
+  for (const f of files) {
+    form.append('files', f);
+  }
+  const { data } = await api.post<WorkRow>(
+    `/championships/${championshipId}/works/with-attachments`,
+    form,
   );
   return data;
 }
@@ -56,4 +78,28 @@ export async function deleteWork(
   workId: number,
 ): Promise<void> {
   await api.delete(`/championships/${championshipId}/works/${workId}`);
+}
+
+export async function postWorkAttachment(
+  championshipId: number,
+  workId: number,
+  file: File,
+): Promise<WorkAttachmentRow> {
+  const form = new FormData();
+  form.append('file', file);
+  const { data } = await api.post<WorkAttachmentRow>(
+    `/championships/${championshipId}/works/${workId}/attachments`,
+    form,
+  );
+  return data;
+}
+
+export async function deleteWorkAttachment(
+  championshipId: number,
+  workId: number,
+  attachmentId: number,
+): Promise<void> {
+  await api.delete(
+    `/championships/${championshipId}/works/${workId}/attachments/${attachmentId}`,
+  );
 }

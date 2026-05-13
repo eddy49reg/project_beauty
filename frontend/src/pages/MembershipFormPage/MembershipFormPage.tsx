@@ -18,7 +18,7 @@ import {
   Subtitle,
   TextLink,
   Title,
-} from '../LoginPage/styles';
+} from '../../shared/ui';
 
 export function MembershipFormPage() {
   const { championshipId: chIdParam } = useParams<{
@@ -130,11 +130,7 @@ export function MembershipFormPage() {
     );
   }
 
-  if (
-    rolesQuery.isError ||
-    usersQuery.isError ||
-    nominationsQuery.isError
-  ) {
+  if (rolesQuery.isError || usersQuery.isError || nominationsQuery.isError) {
     return (
       <Page>
         <Card>

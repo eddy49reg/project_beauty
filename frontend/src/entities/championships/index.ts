@@ -1,4 +1,5 @@
 export type {
+  ChampionshipRegistrationContact,
   ChampionshipRow,
   ChampionshipStatus,
   CreateChampionshipBody,
@@ -8,6 +9,7 @@ export {
   archiveChampionship,
   getChampionship,
   getChampionships,
+  getRegistrationContact,
   patchChampionship,
   postChampionship,
 } from './api';

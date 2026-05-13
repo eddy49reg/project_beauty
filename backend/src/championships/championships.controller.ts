@@ -9,8 +9,10 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { OrganizerOrAdminGuard } from '../auth/guards/organizer-or-admin.guard';
+import type { JwtAccessPayload } from '../auth/types/jwt-access.payload';
 import { ChampionshipsService } from './championships.service';
 import { CreateChampionshipDto } from './dto/create-championship.dto';
 import { ListChampionshipsQueryDto } from './dto/list-championships.query.dto';
@@ -22,13 +24,31 @@ export class ChampionshipsController {
   constructor(private readonly championshipsService: ChampionshipsService) {}
 
   @Get()
-  list(@Query() query: ListChampionshipsQueryDto) {
-    return this.championshipsService.list(query);
+  list(
+    @CurrentUser() user: JwtAccessPayload,
+    @Query() query: ListChampionshipsQueryDto,
+  ) {
+    return this.championshipsService.list(user.sub, user.appRole, query);
+  }
+
+  @Get(':id/registration-contact')
+  registrationContact(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: JwtAccessPayload,
+  ) {
+    return this.championshipsService.getRegistrationContact(
+      id,
+      user.sub,
+      user.appRole,
+    );
   }
 
   @Get(':id')
-  findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.championshipsService.findOne(id);
+  findOne(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: JwtAccessPayload,
+  ) {
+    return this.championshipsService.findOne(id, user.sub, user.appRole);
   }
 
   @Post()
@@ -38,17 +58,21 @@ export class ChampionshipsController {
   }
 
   @Patch(':id')
-  @UseGuards(OrganizerOrAdminGuard)
+  @UseGuards(JwtAuthGuard)
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateChampionshipDto,
+    @CurrentUser() user: JwtAccessPayload,
   ) {
-    return this.championshipsService.update(id, dto);
+    return this.championshipsService.update(id, dto, user.sub, user.appRole);
   }
 
   @Patch(':id/archive')
-  @UseGuards(OrganizerOrAdminGuard)
-  archive(@Param('id', ParseIntPipe) id: number) {
-    return this.championshipsService.archive(id);
+  @UseGuards(JwtAuthGuard)
+  archive(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: JwtAccessPayload,
+  ) {
+    return this.championshipsService.archive(id, user.sub, user.appRole);
   }
 }

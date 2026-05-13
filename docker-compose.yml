@@ -24,6 +24,9 @@ services:
     restart: unless-stopped
     ports:
       - '3000:3000'
+    # Яндекс.Диск и прочие секреты — из backend/.env (ключи ниже в environment перезаписывают только то, что нужно для Docker-сети)
+    env_file:
+      - ./backend/.env
     environment:
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/beauty_championship?schema=public
       JWT_SECRET: docker-dev-secret-replace-in-production

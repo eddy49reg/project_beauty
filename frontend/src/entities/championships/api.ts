@@ -1,5 +1,6 @@
 import { api } from '../../lib/api';
 import type {
+  ChampionshipRegistrationContact,
   ChampionshipRow,
   ChampionshipStatus,
   CreateChampionshipBody,
@@ -17,6 +18,15 @@ export async function getChampionships(params?: {
 
 export async function getChampionship(id: number): Promise<ChampionshipRow> {
   const { data } = await api.get<ChampionshipRow>(`/championships/${id}`);
+  return data;
+}
+
+export async function getRegistrationContact(
+  id: number,
+): Promise<ChampionshipRegistrationContact> {
+  const { data } = await api.get<ChampionshipRegistrationContact>(
+    `/championships/${id}/registration-contact`,
+  );
   return data;
 }
 

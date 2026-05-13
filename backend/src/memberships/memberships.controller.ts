@@ -9,7 +9,8 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { OrganizerOrAdminGuard } from '../auth/guards/organizer-or-admin.guard';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import type { JwtAccessPayload } from '../auth/types/jwt-access.payload';
 import { CreateMembershipDto } from './dto/create-membership.dto';
 import { MembershipsService } from './memberships.service';
 
@@ -24,21 +25,31 @@ export class MembershipsController {
   }
 
   @Post()
-  @UseGuards(OrganizerOrAdminGuard)
   create(
     @Param('championshipId', ParseIntPipe) championshipId: number,
     @Body() dto: CreateMembershipDto,
+    @CurrentUser() user: JwtAccessPayload,
   ) {
-    return this.membershipsService.create(championshipId, dto);
+    return this.membershipsService.create(
+      championshipId,
+      dto,
+      user.sub,
+      user.appRole,
+    );
   }
 
   @Delete(':membershipId')
-  @UseGuards(OrganizerOrAdminGuard)
   async remove(
     @Param('championshipId', ParseIntPipe) championshipId: number,
     @Param('membershipId', ParseIntPipe) membershipId: number,
+    @CurrentUser() user: JwtAccessPayload,
   ) {
-    await this.membershipsService.remove(championshipId, membershipId);
+    await this.membershipsService.remove(
+      championshipId,
+      membershipId,
+      user.sub,
+      user.appRole,
+    );
     return { ok: true };
   }
 }

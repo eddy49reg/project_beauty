@@ -4,6 +4,8 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import type { AppUserRole } from '../common/app-user-role';
+import { ChampionshipsService } from '../championships/championships.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateNominationDto } from './dto/create-nomination.dto';
 import { UpdateNominationDto } from './dto/update-nomination.dto';
@@ -19,7 +21,10 @@ const nominationSelect = {
 
 @Injectable()
 export class NominationsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly championships: ChampionshipsService,
+  ) {}
 
   private async getChampionshipOrThrow(championshipId: number) {
     const ch = await this.prisma.championship.findUnique({
@@ -49,7 +54,17 @@ export class NominationsService {
     });
   }
 
-  async create(championshipId: number, dto: CreateNominationDto) {
+  async create(
+    championshipId: number,
+    dto: CreateNominationDto,
+    actorId: number,
+    appRole: AppUserRole,
+  ) {
+    await this.championships.assertUserCanManageChampionship(
+      actorId,
+      appRole,
+      championshipId,
+    );
     const ch = await this.getChampionshipOrThrow(championshipId);
     this.assertChampionshipMutable(ch.status);
     try {
@@ -90,7 +105,14 @@ export class NominationsService {
     championshipId: number,
     nominationId: number,
     dto: UpdateNominationDto,
+    actorId: number,
+    appRole: AppUserRole,
   ) {
+    await this.championships.assertUserCanManageChampionship(
+      actorId,
+      appRole,
+      championshipId,
+    );
     const ch = await this.getChampionshipOrThrow(championshipId);
     this.assertChampionshipMutable(ch.status);
     const existing = await this.prisma.nomination.findFirst({
@@ -129,7 +151,17 @@ export class NominationsService {
     }
   }
 
-  async remove(championshipId: number, nominationId: number) {
+  async remove(
+    championshipId: number,
+    nominationId: number,
+    actorId: number,
+    appRole: AppUserRole,
+  ) {
+    await this.championships.assertUserCanManageChampionship(
+      actorId,
+      appRole,
+      championshipId,
+    );
     const ch = await this.getChampionshipOrThrow(championshipId);
     this.assertChampionshipMutable(ch.status);
     const existing = await this.prisma.nomination.findFirst({

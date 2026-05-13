@@ -19,6 +19,14 @@ export type JudgeWorkRow = {
   nomination: { id: number; title: string };
   author: { id: number; login: string; firstname: string; surname: string };
   myScore: JudgeScoreRow | null;
+  attachments: {
+    id: number;
+    viewUrl: string | null;
+    originalName: string;
+    mimeType: string;
+    sizeBytes: number;
+    createdAt: string;
+  }[];
 };
 
 export type UpsertJudgeScoreBody = {

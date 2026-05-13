@@ -12,7 +12,8 @@ function getBaseURL(): string {
 
 export const api = axios.create({
   baseURL: getBaseURL(),
-  headers: { 'Content-Type': 'application/json' },
+  // Не задаём Content-Type здесь: для JSON axios выставит сам, для FormData —
+  // нужен multipart с boundary (иначе вложения уходят «как JSON» и ломаются).
 });
 
 api.interceptors.request.use((config) => {

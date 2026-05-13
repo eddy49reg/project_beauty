@@ -10,3 +10,5 @@ export { postLogin, postRegister } from './api';
 export { getAuthApiErrorMessage } from './lib/apiError';
 export { useLoginMutation } from './hooks/useLoginMutation';
 export { useRegisterMutation } from './hooks/useRegisterMutation';
+export { useAuthMutationServerMessage } from './hooks/useAuthMutationServerMessage';
+export { hasGlobalChampionshipAdminAccess } from './globalAppRole';

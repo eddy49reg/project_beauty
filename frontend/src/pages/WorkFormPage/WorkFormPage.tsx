@@ -1,20 +1,25 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { useCallback, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
+import { getClientMeta } from '../../entities/appMeta/api';
 import { getChampionship } from '../../entities/championships';
 import { getAuthApiErrorMessage } from '../../entities/auth';
 import { getNominations } from '../../entities/nominations';
 import {
-  deleteWork,
-  getMyWork,
-  patchWork,
-  postWork,
-  submitWork,
+  useCreateWorkMutation,
+  useCreateWorkWithAttachmentsMutation,
+  useDeleteWorkAttachmentMutation,
+  useDeleteWorkMutation,
+  useMyWorkQuery,
+  useSubmitWorkMutation,
+  useUpdateWorkMutation,
+  useUploadWorkAttachmentMutation,
+  WorkAttachmentImage,
+  type WorkFormValues,
 } from '../../entities/works';
+import { firstDefined } from '../../lib/firstDefined';
 import {
-  Button,
-  Card,
   ErrorText,
   FooterLinks,
   Input,
@@ -23,26 +28,65 @@ import {
   Subtitle,
   TextLink,
   Title,
-} from '../LoginPage/styles';
-
-type FormValues = {
-  nominationId: string;
-  title: string;
-  description: string;
-};
+} from '../../shared/ui';
+import {
+  ActionRow,
+  AttachmentList,
+  AttachmentRow,
+  DangerAction,
+  DescriptionArea,
+  DraftFileList,
+  DraftFileRow,
+  FieldBlock,
+  FileInput,
+  FormCard,
+  FormSubmit,
+  HintBlock,
+  Muted,
+  MutedSmall,
+  NominationSelect,
+  PrimaryAction,
+  Section,
+  SectionLoose,
+  StatusLine,
+  TextButton,
+  TextButtonLg,
+  UploadPending,
+} from './styles';
+import { useSyncWorkFormFromWork } from './hooks/useSyncWorkFormFromWork';
+import { parseWorkRouteIds } from './lib/parseWorkRouteIds';
 
 export function WorkFormPage() {
-  const { championshipId: chIdParam, workId: workIdParam } = useParams<{
+  const route = useParams<{
     championshipId: string;
     workId: string;
   }>();
-  const championshipId = chIdParam ? Number(chIdParam) : NaN;
-  const workId = workIdParam ? Number(workIdParam) : NaN;
-  const isEdit = Number.isFinite(workId);
-  const navigate = useNavigate();
-  const queryClient = useQueryClient();
+  const { championshipId, workId, isEdit } = parseWorkRouteIds(route);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [newDraftFiles, setNewDraftFiles] = useState<File[]>([]);
+  const [createFileError, setCreateFileError] = useState<string | null>(null);
 
-  const { register, reset, handleSubmit, watch } = useForm<FormValues>({
+  const clearCreateUi = useCallback(() => {
+    setNewDraftFiles([]);
+    setCreateFileError(null);
+  }, []);
+
+  const createMut = useCreateWorkMutation(championshipId, clearCreateUi);
+  const createWithAttMut = useCreateWorkWithAttachmentsMutation(
+    championshipId,
+    clearCreateUi,
+  );
+  const updateMut = useUpdateWorkMutation(championshipId, workId);
+  const submitMut = useSubmitWorkMutation(championshipId, workId);
+  const deleteMut = useDeleteWorkMutation(championshipId, workId);
+  const uploadMut = useUploadWorkAttachmentMutation(
+    championshipId,
+    workId,
+    fileInputRef,
+  );
+  const deleteAttMut = useDeleteWorkAttachmentMutation(championshipId, workId);
+
+  const { register, reset, handleSubmit, watch } = useForm<WorkFormValues>({
     defaultValues: { nominationId: '', title: '', description: '' },
   });
 
@@ -56,93 +100,48 @@ export function WorkFormPage() {
     queryFn: () => getNominations(championshipId),
     enabled: Number.isFinite(championshipId),
   });
-  const workQuery = useQuery({
-    queryKey: ['work', championshipId, workId],
-    queryFn: () => getMyWork(championshipId, workId),
-    enabled: isEdit && Number.isFinite(championshipId),
+  const workQuery = useMyWorkQuery(championshipId, workId, isEdit);
+  const metaQuery = useQuery({
+    queryKey: ['clientMeta'],
+    queryFn: getClientMeta,
+    staleTime: 60_000,
   });
 
-  useEffect(() => {
-    if (!workQuery.data) return;
-    reset({
-      nominationId: String(workQuery.data.nominationId),
-      title: workQuery.data.title,
-      description: workQuery.data.description ?? '',
-    });
-  }, [workQuery.data, reset]);
-
-  const goList = () => navigate(`/championships/${championshipId}/works/my`);
-
-  const createMut = useMutation({
-    mutationFn: (v: FormValues) =>
-      postWork(championshipId, {
-        nominationId: Number(v.nominationId),
-        title: v.title.trim(),
-        description: v.description.trim() || undefined,
-      }),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: ['works', 'my', championshipId],
-      });
-      goList();
-    },
-  });
-
-  const updateMut = useMutation({
-    mutationFn: (v: FormValues) =>
-      patchWork(championshipId, workId, {
-        title: v.title.trim(),
-        description: v.description.trim() || undefined,
-      }),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: ['works', 'my', championshipId],
-      });
-      goList();
-    },
-  });
-
-  const submitMut = useMutation({
-    mutationFn: () => submitWork(championshipId, workId),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: ['works', 'my', championshipId],
-      });
-      goList();
-    },
-  });
-
-  const deleteMut = useMutation({
-    mutationFn: () => deleteWork(championshipId, workId),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: ['works', 'my', championshipId],
-      });
-      goList();
-    },
-  });
+  useSyncWorkFormFromWork(workQuery.data, reset);
 
   const serverError = getAuthApiErrorMessage(
-    createMut.error ?? updateMut.error ?? submitMut.error ?? deleteMut.error,
+    firstDefined(
+      createMut.error,
+      createWithAttMut.error,
+      updateMut.error,
+      submitMut.error,
+      deleteMut.error,
+      uploadMut.error,
+      deleteAttMut.error,
+    ),
     'Операция с работой завершилась ошибкой.',
   );
 
   if (!Number.isFinite(championshipId)) {
     return (
       <Page>
-        <Card>
+        <FormCard>
           <Title>Некорректный адрес</Title>
-        </Card>
+        </FormCard>
       </Page>
     );
   }
 
-  if (chQuery.isLoading || nomsQuery.isLoading || (isEdit && workQuery.isLoading)) {
+  if (
+    chQuery.isLoading ||
+    nomsQuery.isLoading ||
+    (isEdit && workQuery.isLoading)
+  ) {
     return (
       <Page>
-        <Card>
+        <FormCard>
           <Title>Загрузка…</Title>
-        </Card>
+        </FormCard>
       </Page>
     );
   }
@@ -150,7 +149,7 @@ export function WorkFormPage() {
   if (chQuery.isError || nomsQuery.isError || (isEdit && workQuery.isError)) {
     return (
       <Page>
-        <Card>
+        <FormCard>
           <Title>Работа</Title>
           <ErrorText>Не удалось загрузить данные.</ErrorText>
           <FooterLinks>
@@ -158,49 +157,65 @@ export function WorkFormPage() {
               К моим работам
             </TextLink>
           </FooterLinks>
-        </Card>
+        </FormCard>
       </Page>
     );
   }
 
   const isPending =
     createMut.isPending ||
+    createWithAttMut.isPending ||
     updateMut.isPending ||
     submitMut.isPending ||
-    deleteMut.isPending;
+    deleteMut.isPending ||
+    uploadMut.isPending ||
+    deleteAttMut.isPending;
 
   const readOnly = isEdit && workQuery.data?.status !== 'DRAFT';
+  const diskEnabled = metaQuery.data?.workPhotoUploadEnabled ?? false;
+  const attachments = workQuery.data?.attachments ?? [];
+  const needPhotoForSubmit = diskEnabled && attachments.length < 1;
 
-  const onSubmit = (v: FormValues) => {
+  const onSubmit = (v: WorkFormValues) => {
     if (isEdit) {
       updateMut.mutate(v);
       return;
     }
+    if (diskEnabled) {
+      if (newDraftFiles.length < 1) {
+        setCreateFileError(
+          'Добавьте хотя бы одно изображение — черновик и фото создаются одним запросом.',
+        );
+        return;
+      }
+      setCreateFileError(null);
+      createWithAttMut.mutate({ v, files: newDraftFiles });
+      return;
+    }
+    setCreateFileError(null);
     createMut.mutate(v);
   };
 
   return (
     <Page>
-      <Card style={{ maxWidth: 560 }}>
+      <FormCard>
         <Title>{isEdit ? 'Моя работа' : 'Новая работа'}</Title>
         <Subtitle>
-          Заполните данные и отправьте работу до окончания регистрации.
+          {isEdit
+            ? 'Черновик: можно править текст и фото до отправки на судейство.'
+            : diskEnabled
+              ? 'Заполните данные, выберите изображения и создайте черновик: работа и файлы сохраняются одним запросом. До 10 файлов, до 12 МБ каждый.'
+              : 'Заполните данные и создайте черновик. После создания можно отредактировать текст. Загрузка фотографий сейчас недоступна — при необходимости сообщите организатору чемпионата.'}
         </Subtitle>
         {serverError ? <ErrorText>{serverError}</ErrorText> : null}
+        {createFileError ? <ErrorText>{createFileError}</ErrorText> : null}
 
         <form onSubmit={handleSubmit(onSubmit)}>
           <div>
             <Label htmlFor="work-nomination">Номинация</Label>
-            <select
+            <NominationSelect
               id="work-nomination"
               disabled={isEdit || readOnly}
-              style={{
-                width: '100%',
-                padding: '10px 12px',
-                borderRadius: 8,
-                border: '1px solid #e2e8f0',
-                fontSize: '1rem',
-              }}
               {...register('nominationId', { required: true })}
             >
               <option value="">— выберите —</option>
@@ -209,81 +224,192 @@ export function WorkFormPage() {
                   {n.title}
                 </option>
               ))}
-            </select>
+            </NominationSelect>
           </div>
 
-          <div style={{ marginTop: 12 }}>
+          <FieldBlock>
             <Label htmlFor="work-title">Название работы</Label>
-            <Input id="work-title" disabled={readOnly} {...register('title', { required: true })} />
-          </div>
+            <Input
+              id="work-title"
+              disabled={readOnly}
+              {...register('title', { required: true })}
+            />
+          </FieldBlock>
 
-          <div style={{ marginTop: 12 }}>
+          <FieldBlock>
             <Label htmlFor="work-description">Описание</Label>
-            <textarea
+            <DescriptionArea
               id="work-description"
               rows={5}
               disabled={readOnly}
-              style={{
-                width: '100%',
-                boxSizing: 'border-box',
-                padding: '10px 12px',
-                border: '1px solid #e2e8f0',
-                borderRadius: 8,
-                fontSize: '1rem',
-                minHeight: 100,
-                resize: 'vertical',
-                fontFamily: 'inherit',
-              }}
               {...register('description')}
             />
-          </div>
+          </FieldBlock>
+
+          {!isEdit && diskEnabled ? (
+            <Section>
+              <Label htmlFor="new-work-photos">Фотографии работы</Label>
+              <HintBlock>
+                До <strong>10</strong> изображений (JPEG, PNG, WebP, GIF).
+                Сохранение на Яндекс.Диск (OAuth).{' '}
+                Если загрузка не удастся, черновик на сервере не будет создан.
+              </HintBlock>
+              <FileInput
+                id="new-work-photos"
+                type="file"
+                multiple
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                disabled={isPending || newDraftFiles.length >= 10}
+                onChange={(e) => {
+                  const picked = Array.from(e.target.files ?? []);
+                  e.target.value = '';
+                  if (!picked.length) return;
+                  setNewDraftFiles((prev) => [...prev, ...picked].slice(0, 10));
+                  setCreateFileError(null);
+                }}
+              />
+              {newDraftFiles.length > 0 ? (
+                <DraftFileList>
+                  {newDraftFiles.map((f, idx) => (
+                    <DraftFileRow key={`${f.name}-${f.size}-${idx}`}>
+                      <span>{f.name}</span>
+                      <TextButton
+                        type="button"
+                        disabled={isPending}
+                        onClick={() =>
+                          setNewDraftFiles((prev) =>
+                            prev.filter((_, i) => i !== idx),
+                          )
+                        }
+                      >
+                        Убрать
+                      </TextButton>
+                    </DraftFileRow>
+                  ))}
+                </DraftFileList>
+              ) : null}
+            </Section>
+          ) : null}
 
           {!readOnly ? (
-            <Button type="submit" disabled={isPending || !watch('nominationId')} style={{ marginTop: 20 }}>
-              {isPending ? 'Сохранение…' : isEdit ? 'Сохранить' : 'Создать'}
-            </Button>
+            <FormSubmit
+              type="submit"
+              disabled={
+                isPending ||
+                !watch('nominationId') ||
+                (!isEdit && diskEnabled && newDraftFiles.length < 1)
+              }
+            >
+              {isPending
+                ? 'Сохранение…'
+                : isEdit
+                  ? 'Сохранить текст'
+                  : diskEnabled
+                    ? 'Создать черновик с фото'
+                    : 'Создать черновик'}
+            </FormSubmit>
           ) : null}
         </form>
 
         {isEdit && !readOnly ? (
-          <div style={{ marginTop: 16, display: 'flex', gap: 12 }}>
-            <button
+          <SectionLoose>
+            <Label>Фотографии работы</Label>
+            {!diskEnabled ? (
+              <HintBlock>
+                Загрузка файлов сейчас недоступна. Сообщите организатору
+                чемпионата о проблеме с загрузкой материалов к работам. При этом
+                вы можете отправить работу на судейство и без приложенных
+                фотографий.
+              </HintBlock>
+            ) : (
+              <HintBlock>
+                До <strong>10</strong> изображений (JPEG, PNG, WebP, GIF), до 12
+                МБ каждое. Файлы сохраняются на Яндекс.Диск (OAuth).{' '}
+                Перед отправкой работы нужно хотя бы одно фото.
+              </HintBlock>
+            )}
+            {diskEnabled ? (
+              <>
+                <FileInput
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif"
+                  disabled={isPending || attachments.length >= 10}
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) uploadMut.mutate(f);
+                  }}
+                />
+                {uploadMut.isPending ? (
+                  <UploadPending>Загрузка…</UploadPending>
+                ) : null}
+              </>
+            ) : null}
+            {attachments.length > 0 ? (
+              <AttachmentList>
+                {attachments.map((a) => (
+                  <AttachmentRow key={a.id}>
+                    {Number.isFinite(workId) ? (
+                      <WorkAttachmentImage
+                        championshipId={championshipId}
+                        workId={workId}
+                        attachmentId={a.id}
+                        alt={a.originalName}
+                        style={{
+                          maxWidth: 160,
+                          maxHeight: 120,
+                          borderRadius: 8,
+                          objectFit: 'cover',
+                        }}
+                      />
+                    ) : (
+                      <Muted>{a.originalName}</Muted>
+                    )}
+                    <MutedSmall>{a.originalName}</MutedSmall>
+                    {!readOnly && diskEnabled ? (
+                      <TextButtonLg
+                        type="button"
+                        disabled={isPending}
+                        onClick={() => deleteAttMut.mutate(a.id)}
+                      >
+                        Удалить
+                      </TextButtonLg>
+                    ) : null}
+                  </AttachmentRow>
+                ))}
+              </AttachmentList>
+            ) : null}
+          </SectionLoose>
+        ) : null}
+
+        {isEdit && !readOnly ? (
+          <ActionRow>
+            <PrimaryAction
               type="button"
               onClick={() => submitMut.mutate()}
-              disabled={isPending}
-              style={{
-                border: 'none',
-                borderRadius: 8,
-                padding: '10px 14px',
-                color: '#fff',
-                background: '#0f766e',
-                cursor: 'pointer',
-              }}
+              disabled={isPending || needPhotoForSubmit}
+              title={
+                needPhotoForSubmit
+                  ? 'Добавьте хотя бы одно фото, чтобы отправить работу'
+                  : undefined
+              }
             >
-              Отправить
-            </button>
-            <button
+              Отправить на судейство
+            </PrimaryAction>
+            <DangerAction
               type="button"
               onClick={() => deleteMut.mutate()}
               disabled={isPending}
-              style={{
-                border: 'none',
-                borderRadius: 8,
-                padding: '10px 14px',
-                color: '#fff',
-                background: '#b91c1c',
-                cursor: 'pointer',
-              }}
             >
-              Удалить
-            </button>
-          </div>
+              Удалить черновик
+            </DangerAction>
+          </ActionRow>
         ) : null}
 
         {isEdit ? (
-          <Subtitle style={{ marginTop: 14, marginBottom: 0 }}>
+          <StatusLine>
             Статус: <strong>{workQuery.data?.status}</strong>
-          </Subtitle>
+          </StatusLine>
         ) : null}
 
         <FooterLinks>
@@ -292,7 +418,7 @@ export function WorkFormPage() {
           </TextLink>
           <Link to="/championships">К чемпионатам</Link>
         </FooterLinks>
-      </Card>
+      </FormCard>
     </Page>
   );
 }

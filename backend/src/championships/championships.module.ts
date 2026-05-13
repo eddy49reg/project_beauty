@@ -7,5 +7,6 @@ import { ChampionshipsService } from './championships.service';
   imports: [AuthModule],
   controllers: [ChampionshipsController],
   providers: [ChampionshipsService],
+  exports: [ChampionshipsService],
 })
 export class ChampionshipsModule {}

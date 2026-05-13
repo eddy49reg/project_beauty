@@ -11,6 +11,7 @@ import { NominationsModule } from './nominations/nominations.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { RolesModule } from './roles/roles.module';
 import { ResultsModule } from './results/results.module';
+import { StorageModule } from './storage/storage.module';
 import { UsersModule } from './users/users.module';
 import { WorksModule } from './works/works.module';
 
@@ -30,6 +31,7 @@ import { WorksModule } from './works/works.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    StorageModule,
     PrismaModule,
     AuthModule,
     AdminModule,

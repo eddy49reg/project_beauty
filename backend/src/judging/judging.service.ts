@@ -23,6 +23,17 @@ const judgeWorkSelect = {
   author: {
     select: { id: true, login: true, firstname: true, surname: true },
   },
+  attachments: {
+    select: {
+      id: true,
+      viewUrl: true,
+      originalName: true,
+      mimeType: true,
+      sizeBytes: true,
+      createdAt: true,
+    },
+    orderBy: { id: 'asc' as const },
+  },
 } as const;
 
 @Injectable()

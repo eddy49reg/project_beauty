@@ -7,6 +7,7 @@ import {
   getJudgeWork,
   putJudgeScore,
 } from '../../entities/judging';
+import { WorkAttachmentImage } from '../../entities/works';
 import { getAuthApiErrorMessage } from '../../entities/auth';
 import {
   Button,
@@ -19,7 +20,7 @@ import {
   Subtitle,
   TextLink,
   Title,
-} from '../LoginPage/styles';
+} from '../../shared/ui';
 
 type FormValues = {
   score: string;
@@ -145,6 +146,71 @@ export function JudgeWorkScorePage() {
           </Subtitle>
         ) : null}
 
+        {row.attachments && row.attachments.length > 0 ? (
+          <div style={{ marginTop: 16 }}>
+            <Label>Материалы работы</Label>
+            <div
+              style={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: 12,
+                marginTop: 8,
+              }}
+            >
+              {row.attachments.map((a) => (
+                <div key={a.id} style={{ lineHeight: 0 }}>
+                  {a.viewUrl ? (
+                    <a
+                      href={a.viewUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      title="Открыть в Яндекс.Диске"
+                      style={{
+                        display: 'inline-block',
+                        cursor: 'pointer',
+                        borderRadius: 8,
+                      }}
+                    >
+                      <WorkAttachmentImage
+                        championshipId={championshipId}
+                        workId={workId}
+                        attachmentId={a.id}
+                        alt={a.originalName}
+                        style={{
+                          maxWidth: 220,
+                          maxHeight: 180,
+                          borderRadius: 8,
+                          objectFit: 'cover',
+                          border: '1px solid #e2e8f0',
+                          display: 'block',
+                        }}
+                      />
+                    </a>
+                  ) : (
+                    <WorkAttachmentImage
+                      championshipId={championshipId}
+                      workId={workId}
+                      attachmentId={a.id}
+                      alt={a.originalName}
+                      style={{
+                        maxWidth: 220,
+                        maxHeight: 180,
+                        borderRadius: 8,
+                        objectFit: 'cover',
+                        border: '1px solid #e2e8f0',
+                      }}
+                    />
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <Subtitle style={{ marginTop: 12, color: '#64748b' }}>
+            К работе не прикреплены изображения.
+          </Subtitle>
+        )}
+
         {error && saveMutation.isError ? <ErrorText>{error}</ErrorText> : null}
 
         <form onSubmit={handleSubmit((v) => saveMutation.mutate(v))}>
@@ -182,7 +248,9 @@ export function JudgeWorkScorePage() {
 
           <Button
             type="submit"
-            disabled={saveMutation.isPending || finalizeMutation.isPending || isFinal}
+            disabled={
+              saveMutation.isPending || finalizeMutation.isPending || isFinal
+            }
             style={{ marginTop: 20 }}
           >
             {saveMutation.isPending ? 'Сохранение…' : 'Сохранить черновик'}
@@ -204,7 +272,9 @@ export function JudgeWorkScorePage() {
               cursor: 'pointer',
             }}
           >
-            {finalizeMutation.isPending ? 'Финализация…' : 'Финализировать оценку'}
+            {finalizeMutation.isPending
+              ? 'Финализация…'
+              : 'Финализировать оценку'}
           </button>
         ) : null}
 

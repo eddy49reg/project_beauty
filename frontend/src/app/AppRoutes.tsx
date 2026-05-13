@@ -1,4 +1,5 @@
 import { Route, Routes } from 'react-router-dom';
+import { ApplyParticipationPage } from '../pages/ApplyParticipationPage/ApplyParticipationPage';
 import { ChampionshipFormPage } from '../pages/ChampionshipFormPage/ChampionshipFormPage';
 import { MembershipFormPage } from '../pages/MembershipFormPage/MembershipFormPage';
 import { MembershipsListPage } from '../pages/MembershipsListPage/MembershipsListPage';
@@ -6,7 +7,7 @@ import { JudgeWorksListPage } from '../pages/JudgeWorksListPage/JudgeWorksListPa
 import { JudgeWorkScorePage } from '../pages/JudgeWorkScorePage/JudgeWorkScorePage';
 import { NominationFormPage } from '../pages/NominationFormPage/NominationFormPage';
 import { NominationsListPage } from '../pages/NominationsListPage/NominationsListPage';
-import { WorkFormPage } from '../pages/WorkFormPage/WorkFormPage';
+import { WorkFormPage } from '../pages/WorkFormPage';
 import { WorksListPage } from '../pages/WorksListPage/WorksListPage';
 import { AppShell } from '../widgets/AppShell';
 import { AdminUsersGate } from './AdminUsersGate';
@@ -37,9 +38,17 @@ export function AppRoutes() {
         <Route
           path="/championships/:id/edit"
           element={
-            <OrganizerGate>
+            <LoggedInGate>
               <ChampionshipFormPage />
-            </OrganizerGate>
+            </LoggedInGate>
+          }
+        />
+        <Route
+          path="/championships/:championshipId/apply"
+          element={
+            <LoggedInGate>
+              <ApplyParticipationPage />
+            </LoggedInGate>
           }
         />
         <Route
@@ -53,17 +62,17 @@ export function AppRoutes() {
         <Route
           path="/championships/:championshipId/nominations/new"
           element={
-            <OrganizerGate>
+            <LoggedInGate>
               <NominationFormPage />
-            </OrganizerGate>
+            </LoggedInGate>
           }
         />
         <Route
           path="/championships/:championshipId/nominations/:nominationId/edit"
           element={
-            <OrganizerGate>
+            <LoggedInGate>
               <NominationFormPage />
-            </OrganizerGate>
+            </LoggedInGate>
           }
         />
         <Route
@@ -77,9 +86,9 @@ export function AppRoutes() {
         <Route
           path="/championships/:championshipId/memberships/new"
           element={
-            <OrganizerGate>
+            <LoggedInGate>
               <MembershipFormPage />
-            </OrganizerGate>
+            </LoggedInGate>
           }
         />
         <Route

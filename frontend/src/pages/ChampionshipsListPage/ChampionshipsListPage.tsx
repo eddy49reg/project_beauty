@@ -1,13 +1,18 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
+import { Fragment, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
+import {
+  getAuthApiErrorMessage,
+  hasGlobalChampionshipAdminAccess,
+  type UserAppRole,
+} from '../../entities/auth';
 import {
   archiveChampionship,
   getChampionships,
   type ChampionshipRow,
   type ChampionshipStatus,
 } from '../../entities/championships';
-import { getAuthApiErrorMessage } from '../../entities/auth';
 import { useAuthStore } from '../../store/authStore';
 import {
   AdminPage,
@@ -53,11 +58,178 @@ function formatRange(from: string, to: string): string {
   return `${a.toLocaleString('ru-RU')} — ${b.toLocaleString('ru-RU')}`;
 }
 
+function listActionsForRow(
+  row: ChampionshipRow,
+  appRole: UserAppRole,
+): {
+  applyOnly: boolean;
+  showNominations: boolean;
+  showMemberships: boolean;
+  showMyWorks: boolean;
+  showJudging: boolean;
+  showResults: boolean;
+  showEdit: boolean;
+  showArchive: boolean;
+} {
+  const codes = new Set(row.myRoleCodes ?? []);
+  const hasMembership = codes.size > 0;
+  const canApply = Boolean(row.canApplyAsParticipant);
+
+  const isAdmin = appRole === 'ADMIN';
+  const isGlobalOrg = appRole === 'ORGANIZER';
+  const isChampOrg = codes.has('organizer');
+  const isParticipant = codes.has('participant');
+  const isJudge = codes.has('judge');
+
+  const canManageRow = isAdmin || isGlobalOrg || isChampOrg;
+
+  if (!hasMembership && canApply && !isAdmin && !isGlobalOrg) {
+    return {
+      applyOnly: true,
+      showNominations: false,
+      showMemberships: false,
+      showMyWorks: false,
+      showJudging: false,
+      showResults: false,
+      showEdit: false,
+      showArchive: false,
+    };
+  }
+
+  const showNominations = canManageRow || isParticipant;
+  const showMemberships = canManageRow;
+  const showMyWorks =
+    isParticipant &&
+    !isChampOrg &&
+    appRole !== 'ADMIN' &&
+    appRole !== 'ORGANIZER';
+  const showJudging = isJudge || canManageRow;
+  const showResults = canManageRow;
+  const showEdit = canManageRow && row.status !== 'ARCHIVED';
+  const showArchive =
+    canManageRow &&
+    row.status !== 'ARCHIVED' &&
+    row.status !== 'DRAFT';
+
+  return {
+    applyOnly: false,
+    showNominations,
+    showMemberships,
+    showMyWorks,
+    showJudging,
+    showResults,
+    showEdit,
+    showArchive,
+  };
+}
+
+function ChampionshipActionsCell({
+  row,
+  appRole,
+  archivePending,
+  onArchive,
+}: {
+  row: ChampionshipRow;
+  appRole: UserAppRole;
+  archivePending: boolean;
+  onArchive: (row: ChampionshipRow) => void;
+}) {
+  const ui = listActionsForRow(row, appRole);
+
+  if (ui.applyOnly) {
+    return (
+      <Link to={`/championships/${row.id}/apply`}>
+        Подать заявку на участие
+      </Link>
+    );
+  }
+
+  const parts: ReactNode[] = [];
+  if (ui.showNominations) {
+    parts.push(
+      <Link key="nom" to={`/championships/${row.id}/nominations`}>
+        Номинации
+      </Link>,
+    );
+  }
+  if (ui.showMemberships) {
+    parts.push(
+      <Link key="mem" to={`/championships/${row.id}/memberships`}>
+        Назначения
+      </Link>,
+    );
+  }
+  if (ui.showMyWorks) {
+    parts.push(
+      <Link key="works" to={`/championships/${row.id}/works/my`}>
+        Мои работы
+      </Link>,
+    );
+  }
+  if (ui.showJudging) {
+    parts.push(
+      <Link key="jud" to={`/championships/${row.id}/judging/works`}>
+        Судейство
+      </Link>,
+    );
+  }
+  if (ui.showResults) {
+    parts.push(
+      <Link key="res" to={`/championships/${row.id}/results`}>
+        Результаты
+      </Link>,
+    );
+  }
+  if (ui.showEdit) {
+    parts.push(
+      <Link key="edit" to={`/championships/${row.id}/edit`}>
+        Изменить
+      </Link>,
+    );
+  }
+  if (ui.showArchive) {
+    parts.push(
+      <button
+        key="arch"
+        type="button"
+        style={{
+          background: 'none',
+          border: 'none',
+          padding: 0,
+          color: '#2563eb',
+          cursor: 'pointer',
+          font: 'inherit',
+          textDecoration: 'underline',
+        }}
+        disabled={archivePending}
+        onClick={() => onArchive(row)}
+      >
+        В архив
+      </button>,
+    );
+  }
+
+  if (parts.length === 0) {
+    return <Muted>—</Muted>;
+  }
+
+  return (
+    <>
+      {parts.map((node, i) => (
+        <Fragment key={`a-${i}`}>
+          {i > 0 ? ' · ' : null}
+          {node}
+        </Fragment>
+      ))}
+    </>
+  );
+}
+
 export function ChampionshipsListPage() {
   const queryClient = useQueryClient();
   const user = useAuthStore((s) => s.user);
-  const canManage =
-    user?.appRole === 'ADMIN' || user?.appRole === 'ORGANIZER';
+  const appRole: UserAppRole = user?.appRole ?? 'USER';
+  const canCreateChampionship = hasGlobalChampionshipAdminAccess(user);
 
   const listQuery = useQuery({
     queryKey: ['championships'],
@@ -96,11 +268,12 @@ export function ChampionshipsListPage() {
       <WideCard>
         <Title>Чемпионаты</Title>
         <Subtitle>
-          Список событий. Просмотр доступен всем авторизованным пользователям;
-          создание и изменение — организатору или администратору.
+          Список чемпионатов с учётом ваших ролей: черновики видны только
+          администратору и организатору чемпионата; действия в строке зависят от
+          роли в конкретном событии.
         </Subtitle>
 
-        {canManage ? (
+        {canCreateChampionship ? (
           <Muted style={{ marginTop: 8 }}>
             <Link to="/championships/new">+ Создать чемпионат</Link>
           </Muted>
@@ -151,54 +324,12 @@ export function ChampionshipsListPage() {
                       )}
                     </Td>
                     <Td>
-                      <Link to={`/championships/${row.id}/nominations`}>
-                        Номинации
-                      </Link>
-                      {' · '}
-                      <Link to={`/championships/${row.id}/memberships`}>
-                        Назначения
-                      </Link>
-                      {' · '}
-                      <Link to={`/championships/${row.id}/works/my`}>
-                        Мои работы
-                      </Link>
-                      {' · '}
-                      <Link to={`/championships/${row.id}/judging/works`}>
-                        Судейство
-                      </Link>
-                      {' · '}
-                      <Link to={`/championships/${row.id}/results`}>
-                        Результаты
-                      </Link>
-                      {canManage && row.status !== 'ARCHIVED' ? (
-                        <>
-                          {' · '}
-                          <Link to={`/championships/${row.id}/edit`}>
-                            Изменить
-                          </Link>
-                          {row.status !== 'DRAFT' ? (
-                            <>
-                              {' · '}
-                              <button
-                                type="button"
-                                style={{
-                                  background: 'none',
-                                  border: 'none',
-                                  padding: 0,
-                                  color: '#2563eb',
-                                  cursor: 'pointer',
-                                  font: 'inherit',
-                                  textDecoration: 'underline',
-                                }}
-                                disabled={archiveMutation.isPending}
-                                onClick={() => onArchive(row)}
-                              >
-                                В архив
-                              </button>
-                            </>
-                          ) : null}
-                        </>
-                      ) : null}
+                      <ChampionshipActionsCell
+                        row={row}
+                        appRole={appRole}
+                        archivePending={archiveMutation.isPending}
+                        onArchive={onArchive}
+                      />
                     </Td>
                   </tr>
                 ))}

@@ -1,5 +1,5 @@
 import styled from '@emotion/styled';
-import { Card, Page, Subtitle, Title } from '../LoginPage/styles';
+import { Card, Page, Subtitle, Title } from '../../shared/ui';
 
 export const AdminPage = styled(Page)({
   alignItems: 'flex-start',

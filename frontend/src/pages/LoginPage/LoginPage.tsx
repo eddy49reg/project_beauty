@@ -1,8 +1,8 @@
 import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import {
-  getAuthApiErrorMessage,
   type LoginBody,
+  useAuthMutationServerMessage,
   useLoginMutation,
 } from '../../entities/auth';
 import { LOGIN_RE, LOGIN_RE_MESSAGE } from '../../lib/authValidation';
@@ -19,7 +19,7 @@ import {
   Subtitle,
   TextLink,
   Title,
-} from './styles';
+} from '../../shared/ui';
 
 export function LoginPage() {
   const navigate = useNavigate();
@@ -40,12 +40,10 @@ export function LoginPage() {
     },
   });
 
-  const serverErrorMessage = mutation.isError
-    ? getAuthApiErrorMessage(
-        mutation.error,
-        'Не удалось войти. Проверьте данные.',
-      )
-    : null;
+  const serverErrorMessage = useAuthMutationServerMessage(
+    mutation,
+    'Не удалось войти. Проверьте данные.',
+  );
 
   return (
     <Page>

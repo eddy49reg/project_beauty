@@ -25,7 +25,7 @@ import {
   Subtitle,
   TextLink,
   Title,
-} from '../LoginPage/styles';
+} from '../../shared/ui';
 
 /** В форме создания/редактирования статус ARCHIVED не выбирается — только через «В архив». */
 const FORM_STATUSES: ChampionshipStatus[] = [
@@ -237,7 +237,9 @@ export function ChampionshipFormPage() {
   return (
     <Page>
       <Card style={{ maxWidth: 560, width: '100%' }}>
-        <Title>{isEdit ? 'Редактирование чемпионата' : 'Новый чемпионат'}</Title>
+        <Title>
+          {isEdit ? 'Редактирование чемпионата' : 'Новый чемпионат'}
+        </Title>
         <Subtitle>
           Укажите название, статус и интервалы дат. Проверка порядка дат
           выполняется на сервере.
@@ -342,7 +344,9 @@ export function ChampionshipFormPage() {
           </div>
 
           <div style={{ marginTop: 12 }}>
-            <Label htmlFor="ch-j-end">Окончание судейства (необязательно)</Label>
+            <Label htmlFor="ch-j-end">
+              Окончание судейства (необязательно)
+            </Label>
             <Input
               id="ch-j-end"
               type="datetime-local"
@@ -360,11 +364,7 @@ export function ChampionshipFormPage() {
           </div>
 
           <Button type="submit" disabled={isPending} style={{ marginTop: 20 }}>
-            {isPending
-              ? 'Сохранение…'
-              : isEdit
-                ? 'Сохранить'
-                : 'Создать'}
+            {isPending ? 'Сохранение…' : isEdit ? 'Сохранить' : 'Создать'}
           </Button>
         </form>
 

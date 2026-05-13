@@ -1,8 +1,8 @@
 import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import {
-  getAuthApiErrorMessage,
   type RegisterBody,
+  useAuthMutationServerMessage,
   useRegisterMutation,
 } from '../../entities/auth';
 import {
@@ -27,7 +27,7 @@ import {
   Subtitle,
   TextLink,
   Title,
-} from './styles';
+} from '../../shared/ui';
 
 type RegisterFormValues = RegisterBody & { confirmPassword: string };
 
@@ -59,16 +59,14 @@ export function RegisterPage() {
     },
   });
 
-  const serverErrorMessage = mutation.isError
-    ? getAuthApiErrorMessage(
-        mutation.error,
-        'Не удалось зарегистрироваться. Проверьте данные.',
-      )
-    : null;
+  const serverErrorMessage = useAuthMutationServerMessage(
+    mutation,
+    'Не удалось зарегистрироваться. Проверьте данные.',
+  );
 
   return (
     <Page>
-      <Card>
+      <Card $maxWidth={440}>
         <Title>Регистрация</Title>
         <Subtitle>Создайте аккаунт для участия в чемпионатах</Subtitle>
         {serverErrorMessage ? (

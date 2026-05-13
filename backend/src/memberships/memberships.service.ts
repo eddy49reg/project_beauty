@@ -4,6 +4,8 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import type { AppUserRole } from '../common/app-user-role';
+import { ChampionshipsService } from '../championships/championships.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateMembershipDto } from './dto/create-membership.dto';
 
@@ -33,7 +35,10 @@ const membershipSelect = {
 
 @Injectable()
 export class MembershipsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly championships: ChampionshipsService,
+  ) {}
 
   private async getChampionshipOrThrow(championshipId: number) {
     const ch = await this.prisma.championship.findUnique({
@@ -63,7 +68,17 @@ export class MembershipsService {
     });
   }
 
-  async create(championshipId: number, dto: CreateMembershipDto) {
+  async create(
+    championshipId: number,
+    dto: CreateMembershipDto,
+    actorId: number,
+    appRole: AppUserRole,
+  ) {
+    await this.championships.assertUserCanManageChampionship(
+      actorId,
+      appRole,
+      championshipId,
+    );
     const ch = await this.getChampionshipOrThrow(championshipId);
     this.assertChampionshipMutable(ch.status);
 
@@ -116,7 +131,17 @@ export class MembershipsService {
     }
   }
 
-  async remove(championshipId: number, membershipId: number) {
+  async remove(
+    championshipId: number,
+    membershipId: number,
+    actorId: number,
+    appRole: AppUserRole,
+  ) {
+    await this.championships.assertUserCanManageChampionship(
+      actorId,
+      appRole,
+      championshipId,
+    );
     const ch = await this.getChampionshipOrThrow(championshipId);
     this.assertChampionshipMutable(ch.status);
 

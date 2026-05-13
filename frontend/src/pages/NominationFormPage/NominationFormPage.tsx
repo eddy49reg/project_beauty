@@ -22,7 +22,7 @@ import {
   Subtitle,
   TextLink,
   Title,
-} from '../LoginPage/styles';
+} from '../../shared/ui';
 
 type FormValues = {
   title: string;
@@ -107,14 +107,9 @@ export function NominationFormPage() {
 
   const serverError = (() => {
     const err =
-      createMutation.error ??
-      updateMutation.error ??
-      deleteMutation.error;
+      createMutation.error ?? updateMutation.error ?? deleteMutation.error;
     if (!err) return null;
-    return getAuthApiErrorMessage(
-      err,
-      'Операция с номинацией не удалась.',
-    );
+    return getAuthApiErrorMessage(err, 'Операция с номинацией не удалась.');
   })();
 
   const isPending =

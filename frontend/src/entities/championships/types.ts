@@ -18,6 +18,10 @@ export type ChampionshipRow = {
   resultPublishedAt: string | null;
   createdAt: string;
   updatedAt: string;
+  /** Коды ролей в этом чемпионате (membership), сортированный список с бэкенда. */
+  myRoleCodes?: string[];
+  /** Можно подать заявку участника (см. правила на бэкенде). */
+  canApplyAsParticipant?: boolean;
 };
 
 export type CreateChampionshipBody = {
@@ -32,3 +36,9 @@ export type CreateChampionshipBody = {
 };
 
 export type UpdateChampionshipBody = Partial<CreateChampionshipBody>;
+
+/** Ответ GET /championships/:id/registration-contact */
+export type ChampionshipRegistrationContact = {
+  organizerTelegram: string | null;
+  organizerDisplayName: string | null;
+};

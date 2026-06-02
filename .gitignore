@@ -16,6 +16,7 @@ docs/*-plain.txt
 
 # Локальные venv для скриптов генерации .docx (python-docx и т.д.)
 .venv-docx/
+.venv-img/
 
 # ВКР: сгенерированные Word и примеры PDF в docs/
 docs/**/*.docx
@@ -26,6 +27,16 @@ docs/ВКР*.md
 
 # Локальные заметки фронтенда (конвенции и т.п.)
 frontend/docs/
+
+# Production secrets on VPS (never commit)
+.env.prod
+backend/.env
+
+# Презентация к защите ВКР (генерируется локально, в репо приложения не нужна)
+docs/slide*
+
+# Генераторы слайдов презентации (не часть приложения)
+scripts/generate_slide*.py
 
 # ВКР: Python — блоки текста, стили, генераторы .docx
 scripts/vkr*.py

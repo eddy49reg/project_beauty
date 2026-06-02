@@ -1,0 +1,4 @@
+# DOMAIN is passed from docker-compose.prod.yml (see .env.prod).
+{$DOMAIN}, www.{$DOMAIN} {
+	reverse_proxy frontend:80
+}

@@ -139,3 +139,50 @@ cd ../frontend && npm run build
 - **401 на фронте**: проверить `JWT_SECRET` и повторно войти.
 - **CORS ошибка**: сверить `CORS_ORIGIN` и фактический URL фронта.
 - **Миграция не применяется**: проверить `DATABASE_URL` и состояние контейнера БД.
+
+## 9) Production на VPS (my-chemp.online)
+
+Предполагается Ubuntu, Docker, проект в `/opt/project_beauty`, DNS A‑записи `@` и `www` → IP VPS.
+
+### 9.1) Файлы окружения на сервере
+
+```bash
+cd /opt/project_beauty
+cp .env.prod.example .env.prod
+nano .env.prod   # DOMAIN, POSTGRES_PASSWORD, JWT_SECRET (openssl rand -hex 32)
+
+cp backend/.env.example backend/.env
+nano backend/.env   # Yandex OAuth client id/secret при необходимости
+```
+
+### 9.2) Запуск
+
+```bash
+docker compose --env-file .env.prod \
+  -f docker-compose.yml \
+  -f docker-compose.prod.yml \
+  up -d --build
+```
+
+Проверка: `docker compose --env-file .env.prod -f docker-compose.yml -f docker-compose.prod.yml ps`
+
+Caddy сам получит HTTPS для `DOMAIN` из `.env.prod`.
+
+### 9.3) Seed (один раз)
+
+```bash
+chmod +x scripts/run-prod-seed.sh
+./scripts/run-prod-seed.sh
+```
+
+Логин для комиссии: `admin` / `admin123`.
+
+### 9.4) Smoke-check
+
+1. `https://my-chemp.online` — открывается SPA.
+2. Вход `admin/admin123`.
+3. Список чемпионатов, судейство, результаты.
+
+### 9.5) Яндекс.Диск на проде
+
+OAuth привязку выполнить заново под боевым доменом (см. раздел 2). После `exchange-code` загрузка фото работ включится.

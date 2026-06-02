@@ -1,0 +1,54 @@
+# Production override for VPS (HTTPS via Caddy, DB/backend not exposed).
+# Usage: docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+#
+# Requires .env.prod in project root (see .env.prod.example).
+
+services:
+  postgres:
+    ports: []
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+
+  backend:
+    ports: []
+    environment:
+      DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD}@postgres:5432/beauty_championship?schema=public
+      JWT_SECRET: ${JWT_SECRET}
+      CORS_ORIGIN: https://${DOMAIN},https://www.${DOMAIN}
+      PORT: '3000'
+
+  frontend:
+    ports: []
+    expose:
+      - '80'
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - '80:80'
+      - '443:443'
+    environment:
+      DOMAIN: ${DOMAIN}
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - frontend
+
+  seed:
+    profiles:
+      - seed
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.seed
+    environment:
+      DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD}@postgres:5432/beauty_championship?schema=public
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  caddy_data:
+  caddy_config:
